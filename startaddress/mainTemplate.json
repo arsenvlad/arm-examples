@@ -1,0 +1,532 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "artifactsBaseUrl": {
+      "type": "string",
+      "defaultValue": "https://raw.githubusercontent.com/arsenvlad/examples/startaddress/master",
+      "metadata": {
+        "description": "Base URL for artifacts such as nested templates and scripts",
+        "artifactsBaseUrl": ""
+      }
+    },
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Location for the deployment"
+      }
+    },
+    "clusterName": {
+      "type": "string",
+      "minLength": "2",
+      "maxLength": "10",
+      "metadata": {
+        "description": "Cluster name consisting of 2-10 lowercase letter and numbers"
+      }
+    },
+    "adminUserName": {
+      "type": "string",
+      "defaultValue": "azureuser",
+      "metadata": {
+        "description": "Username for administrator"
+      }
+    },
+    "authenticationType": {
+      "type": "string",
+      "defaultValue": "password",
+      "allowedValues": [
+        "password",
+        "sshPublicKey"
+      ],
+      "metadata": {
+        "description": "Authentication type for the virtual machines"
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Password for administrator"
+      }
+    },
+    "sshPublicKey": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "SSH public key that will be included on all nodes in the cluster. The OpenSSH public key can be generated with tools like ssh-keygen on Linux or OS X."
+      }
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_D3_v2",
+      "metadata": {
+        "description": "VM size"
+      }
+    },
+    "vmCount": {
+      "type": "int",
+      "defaultValue": 2,
+      "allowedValues": [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32 ],
+      "metadata": {
+        "description": "The number of virtual machines instances to provision"
+      }
+    },
+    "vnetNewOrExisting": {
+      "type": "string",
+      "defaultValue": "new",
+      "allowedValues": [
+        "new",
+        "existing"
+      ],
+      "metadata": {
+        "description": "Specifies if a new or an existing virtual network should be used for deploying VMs"
+      }
+    },
+    "vnetResourceGroup": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Virtual Network Resource Group"
+      }
+    },
+    "vnetName": {
+      "type": "string",
+      "defaultValue": "vnet",
+      "metadata": {
+        "description": "Virtual Network name"
+      }
+    },
+    "vnetAddressSpace": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/16",
+      "metadata": {
+        "description": "Virtual Network Address Prefix (i.e. CIDR)"
+      }
+    },
+    "subnet1Name": {
+      "type": "string",
+      "defaultValue": "subnet1",
+      "metadata": {
+        "description": "Subnet1 Name"
+      }
+    },
+    "subnet1AddressSpace": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/24",
+      "metadata": {
+        "description": "Subnet1 Address Space"
+      }
+    },
+    "subnet1StartAddress": {
+      "type": "string",
+      "defaultValue": "10.0.0.11",
+      "metadata": {
+        "description": "Subnet1 Start Address"
+      }
+    },
+    "subnet2Name": {
+      "type": "string",
+      "defaultValue": "subnet2",
+      "metadata": {
+        "description": "Subnet2 Name"
+      }
+    },
+    "subnet2AddressSpace": {
+      "type": "string",
+      "defaultValue": "10.0.1.0/24",
+      "metadata": {
+        "description": "Subnet2 Address Space"
+      }
+    },
+    "subnet2StartAddress": {
+      "type": "string",
+      "defaultValue": "10.0.1.21",
+      "metadata": {
+        "description": "Subnet2 Start Address"
+      }
+    },
+    "subnet3Name": {
+      "type": "string",
+      "defaultValue": "subnet3",
+      "metadata": {
+        "description": "Subnet3 Name"
+      }
+    },
+    "subnet3AddressSpace": {
+      "type": "string",
+      "defaultValue": "10.0.2.0/24",
+      "metadata": {
+        "description": "Subnet3 Address Space"
+      }
+    },
+    "subnet3StartAddress": {
+      "type": "string",
+      "defaultValue": "10.0.2.31",
+      "metadata": {
+        "description": "Subnet3 Start Address"
+      }
+    }
+  },
+  "variables": {
+    "apiVersions": {
+      "resources": {
+        "deployments": "2016-02-01"
+      },
+      "storage": {
+        "storageAccounts": "2016-01-01"
+      },
+      "network": {
+        "virtualNetworks": "2016-03-30",
+        "networkInterfaces": "2016-03-30",
+        "loadBalancers": "2016-03-30",
+        "publicIPAddresses": "2016-03-30",
+        "networkSecurityGroups": "2016-03-30"
+      },
+      "compute": {
+        "availabilitySets": "2016-03-30",
+        "virtualMachines": "2016-03-30",
+        "virtualMachineExtensions": "2016-03-30"
+      }
+    },
+    "baseUrl": "[concat(parameters('artifactsBaseUrl'),'/')]",
+    "scriptUrlInit": "[concat(variables('baseUrl'),'init.sh')]",
+    "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',parameters('vnetName'))]",
+    "subnet1ID": "[concat(variables('vnetID'),'/subnets/',parameters('subnet1Name'))]",
+    "subnet2ID": "[concat(variables('vnetID'),'/subnets/',parameters('subnet2Name'))]",
+    "subnet3ID": "[concat(variables('vnetID'),'/subnets/',parameters('subnet3Name'))]",
+    "nic1": "[concat(parameters('clusterName'),'-','nic1-')]",
+    "nic2": "[concat(parameters('clusterName'),'-','nic2-')]",
+    "nic3": "[concat(parameters('clusterName'),'-','nic3-')]",
+    "s1": "[split(parameters('subnet1StartAddress'),'.')]",
+    "s2": "[split(parameters('subnet2StartAddress'),'.')]",
+    "s3": "[split(parameters('subnet3StartAddress'),'.')]",
+    "vm": "[concat(parameters('clusterName'),'-','vm')]",
+    "publicIPName": "[concat(parameters('clusterName'),'-','publicip')]",
+    "dnsNameForPublicIP": "[concat(parameters('clusterName'),'-',uniqueString(resourceGroup().id))]",
+    "diagnosticsStorageAccount": "[concat('d',uniqueString(resourceGroup().id,'d'),parameters('clusterName'))]",
+    "sharedStorageAccount": "[concat('s',uniqueString(resourceGroup().id,'s'),parameters('clusterName'))]",
+    "sharedStorageAccountType": "Standard_LRS",
+    "clusterAvailabilitySetSettings": {
+      "name": "[concat(parameters('clusterName'),'-as')]",
+      "faultDomainCount": "3",
+      "updateDomainCount": "20"
+    },
+    "sshKeyPath": "[concat('/home/',parameters('adminUsername'),'/.ssh/authorized_keys')]",
+    "linuxConfiguration_sshPublicKey": {
+      "disablePasswordAuthentication": "true",
+      "ssh": {
+        "publicKeys": [
+          {
+            "path": "[variables('sshKeyPath')]",
+            "keyData": "[parameters('sshPublicKey')]"
+          }
+        ]
+      }
+    },
+    "linuxConfiguration_password": { },
+    "linuxConfiguration": "[variables(concat('linuxConfiguration_',parameters('authenticationType')))]"
+  },
+  "resources": [
+    {
+      "apiVersion": "[variables('apiVersions').network.publicIPAddresses]",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "[variables('publicIPName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publicIPAllocationMethod": "Dynamic",
+        "dnsSettings": {
+          "domainNameLabel": "[variables('dnsNameForPublicIP')]"
+        }
+      }
+    },
+    {
+      "apiVersion": "[variables('apiVersions').storage.storageAccounts]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[variables('diagnosticsStorageAccount')]",
+      "location": "[parameters('location')]",
+      "kind": "Storage",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "properties": {
+      }
+    },
+    {
+      "apiVersion": "[variables('apiVersions').network.virtualNetworks]",
+      "type": "Microsoft.Network/virtualNetworks",
+      "name": "[parameters('vnetName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+      ],
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('vnetAddressSpace')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[parameters('subnet1Name')]",
+            "properties": {
+              "addressPrefix": "[parameters('subnet1AddressSpace')]"
+            }
+          },
+          {
+            "name": "[parameters('subnet2Name')]",
+            "properties": {
+              "addressPrefix": "[parameters('subnet2AddressSpace')]"
+            }
+          },
+          {
+            "name": "[parameters('subnet3Name')]",
+            "properties": {
+              "addressPrefix": "[parameters('subnet3AddressSpace')]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "[variables('apiversions').compute.availabilitySets]",
+      "type": "Microsoft.Compute/availabilitySets",
+      "name": "[variables('clusterAvailabilitySetSettings').name]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "platformFaultDomainCount": "[variables('clusterAvailabilitySetSettings').faultDomainCount]",
+        "platformUpdateDomainCount": "[variables('clusterAvailabilitySetSettings').updateDomainCount]"
+      }
+    },
+    {
+      "apiVersion": "[variables('apiVersions').storage.storageAccounts]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[variables('sharedStorageAccount')]",
+      "location": "[parameters('location')]",
+      "kind": "Storage",
+      "sku": {
+        "name": "[variables('sharedStorageAccountType')]"
+      },
+      "properties": {
+      }
+    },
+    {
+      "apiVersion": "[variables('apiVersions').network.networkInterfaces]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[concat(variables('nic1'),copyIndex())]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ip1",
+            "properties": {
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "[concat(variables('s1')[0], '.', variables('s1')[1], '.', add(int(variables('s1')[2]), div(add(int(variables('s1')[3]),copyindex()),256)), '.', mod(add(int(variables('s1')[3]),copyindex()),256))]",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPName'))]"
+              },
+              "subnet": {
+                "id": "[variables('subnet1ID')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "[variables('apiVersions').network.networkInterfaces]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[concat(variables('nic1'),copyIndex(1))]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]"
+      ],
+      "copy": {
+        "name": "nics1Copy",
+        "count": "[sub(parameters('vmCount'),1)]"
+      },
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ip1",
+            "properties": {
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "[concat(variables('s1')[0], '.', variables('s1')[1], '.', add(int(variables('s1')[2]), div(add(int(variables('s1')[3]),copyindex(1)),256)), '.', mod(add(int(variables('s1')[3]),copyindex(1)),256))]",
+              "subnet": {
+                "id": "[variables('subnet1ID')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "[variables('apiVersions').network.networkInterfaces]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[concat(variables('nic2'),copyIndex())]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]"
+      ],
+      "copy": {
+        "name": "nics2Copy",
+        "count": "[parameters('vmCount')]"
+      },
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ip1",
+            "properties": {
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "[concat(variables('s2')[0], '.', variables('s2')[1], '.', add(int(variables('s2')[2]), div(add(int(variables('s2')[3]),copyindex()),256)), '.', mod(add(int(variables('s2')[3]),copyindex()),256))]",
+              "subnet": {
+                "id": "[variables('subnet2ID')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "[variables('apiVersions').network.networkInterfaces]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[concat(variables('nic3'),copyIndex())]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]"
+      ],
+      "copy": {
+        "name": "nics3Copy",
+        "count": "[parameters('vmCount')]"
+      },
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ip1",
+            "properties": {
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "[concat(variables('s3')[0], '.', variables('s3')[1], '.', add(int(variables('s3')[2]), div(add(int(variables('s3')[3]),copyindex()),256)), '.', mod(add(int(variables('s3')[3]),copyindex()),256))]",
+              "subnet": {
+                "id": "[variables('subnet3ID')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "[variables('apiVersions').compute.virtualMachines]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "name": "[concat(variables('vm'),copyIndex())]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Compute/availabilitySets/', variables('clusterAvailabilitySetSettings').name)]",
+        "[concat('Microsoft.Network/networkInterfaces/', concat(variables('nic1'),copyIndex()))]",
+        "[concat('Microsoft.Network/networkInterfaces/', concat(variables('nic2'),copyIndex()))]",
+        "[concat('Microsoft.Network/networkInterfaces/', concat(variables('nic3'),copyIndex()))]",
+        "[concat('Microsoft.Storage/storageAccounts/', variables('sharedStorageAccount'))]",
+        "[concat('Microsoft.Storage/storageAccounts/', variables('diagnosticsStorageAccount'))]"
+      ],
+      "copy": {
+        "name": "vmsCopy",
+        "count": "[parameters('vmCount')]"
+      },
+      "tags": {
+        "Name": "[concat(variables('vm'),copyIndex())]"
+      },
+      "properties": {
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets', variables('clusterAvailabilitySetSettings').name)]"
+        },
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[concat(variables('vm'),copyIndex())]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]",
+          "linuxConfiguration": "[variables('linuxConfiguration')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "OpenLogic",
+            "offer": "CentOS",
+            "sku": "6.7",
+            "version": "latest"
+          },
+          "osDisk": {
+            "name": "osdisk",
+            "vhd": {
+              "uri": "[concat('http://', variables('sharedStorageAccount'), '.blob.core.windows.net/vhds/', concat(variables('vm'),copyIndex()), '-osdisk.vhd')]"
+            },
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          }
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": "true",
+            "storageUri": "[concat('http://', variables('diagnosticsStorageAccount'), '.blob.core.windows.net')]"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('nic1'),copyIndex()))]",
+              "properties": {
+                "primary": true
+              }
+            },
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('nic2'),copyIndex()))]",
+              "properties": {
+                "primary": false
+              }
+            },
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('nic3'),copyIndex()))]",
+              "properties": {
+                "primary": false
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "apiVersion": "[variables('apiVersions').compute.virtualMachineExtensions]",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(concat(variables('vm'),copyIndex()), '/init')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "vmsCopy"
+      ],
+      "copy": {
+        "name": "initExtensionsCopy",
+        "count": "[parameters('vmCount')]"
+      },
+      "properties": {
+        "publisher": "Microsoft.OSTCExtensions",
+        "type": "CustomScriptForLinux",
+        "typeHandlerVersion": "1.5",
+        "autoUpgradeMinorVersion": "true",
+        "settings": {
+          "fileUris": [
+            "[variables('scriptUrlInit')]"
+          ],
+          "commandToExecute": "[concat('sh init.sh', ' nodetype', ' ', parameters('vmCount'), ' ', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('nic1'),copyIndex()))).ipConfigurations[0].properties.privateIPAddress, ' ', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('nic2'),copyIndex()))).ipConfigurations[0].properties.privateIPAddress, ' ', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('nic3'),copyIndex()))).ipConfigurations[0].properties.privateIPAddress, ' ', parameters('subnet1StartAddress'), ' ', parameters('subnet2StartAddress'), ' ', parameters('subnet3StartAddress'))]"
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "publicFqdn": {
+      "type": "string",
+      "value": "[concat(reference(resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPName'))).dnsSettings.fqdn)]"
+    },
+    "commandToExecute": {
+      "type": "string",
+      "value": "[concat('sh init.sh', ' nodetype', ' ', parameters('vmCount'), ' ', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('nic1'),'0'))).ipConfigurations[0].properties.privateIPAddress, ' ', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('nic2'),'0'))).ipConfigurations[0].properties.privateIPAddress, ' ', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('nic3'),'0'))).ipConfigurations[0].properties.privateIPAddress, ' ', parameters('subnet1StartAddress'), ' ', parameters('subnet2StartAddress'), ' ', parameters('subnet3StartAddress'))]"
+    }
+  }
+}
