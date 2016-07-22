@@ -1,0 +1,437 @@
+{
+  "handler": "Microsoft.Compute.MultiVm",
+  "version": "0.0.1-preview",
+  "parameters": {
+    "basics": [
+      {
+        "name": "clusterName",
+        "type": "Microsoft.Common.TextBox",
+        "label": "Cluster name (2-10 letters or numbers)",
+        "toolTip": "Cluster name will be used as prefix for most resources created for this cluster",
+        "defaultValue": "av",
+        "constraints": {
+          "required": true,
+          "regex": "^[a-z0-9]{2,10}$",
+          "validationMessage": "Cluster name between 2 and 10 characters long and can contain only numbers and lowercase letters"
+        }
+      },
+      {
+        "name": "adminUsername",
+        "type": "Microsoft.Compute.UserNameTextBox",
+        "label": "Admin Username",
+        "toolTip": "Admin username for the virtual machines",
+        "defaultValue": "azureuser",
+        "constraints": {
+          "required": true
+        },
+        "osPlatform": "Linux"
+      },
+      {
+        "name": "adminCredentials",
+        "type": "Microsoft.Compute.CredentialsCombo",
+        "label": {
+          "authenticationType": "Authentication Type",
+          "password": "Admin Password",
+          "confirmPassword": "Confirm Password",
+          "sshPublicKey": "SSH Public Key"
+        },
+        "toolTip": {
+          "authenticationType": "Which authentication type to use when connecting to the virtual machines: Password or SSH Public Key",
+          "password": "Admin password for the virtual machines",
+          "sshPublicKey": "SSH public key that will be included on all nodes in the cluster. The OpenSSH public key can be generated with tools like ssh-keygen on Linux or OS X."
+        },
+        "constraints": {
+          "required": true
+        },
+        "options": {
+          "hideConfirmation": false
+        },
+        "osPlatform": "Linux"
+      }
+    ],
+    "steps": [
+      {
+        "name": "userInfo",
+        "label": "User Information",
+        "subLabel": {
+          "preValidation": "Tell us about yourself",
+          "postValidation": "Done"
+        },
+        "bladeTitle": "User Information",
+        "elements": [
+          {
+            "name": "userInfoSection",
+            "type": "Microsoft.Common.Section",
+            "label": "Please tell us about yourself",
+            "elements": [
+              {
+                "name": "fullName",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Your name",
+                "constraints": {
+                  "required": true,
+                  "regex": "^[^\"]*$",
+                  "validationMessage": "Please do not include quotes"
+                }
+              },
+              {
+                "name": "email",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Your Email",
+                "constraints": {
+                  "required": true,
+                  "regex": "^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?",
+                  "validationMessage": "Please provide a valid email address."
+                }
+              },
+              {
+                "name": "company",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Your Company",
+                "constraints": {
+                  "required": true,
+                  "regex": "^[^\"]*$",
+                  "validationMessage": "Please do not include quotes"
+                }
+              },
+              {
+                "name": "phone",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Your Phone Number",
+                "constraints": {
+                  "required": true,
+                  "regex": "^[0-9]+$",
+                  "validationMessage": "Please input digits only, no space, - or ()"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "clusterConfig",
+        "label": "Cluster Config",
+        "subLabel": {
+          "preValidation": "Configure the cluster",
+          "postValidation": "Done"
+        },
+        "bladeTitle": "Cluster Settings",
+        "elements": [
+          {
+            "name": "vmCount",
+            "type": "Microsoft.Common.DropDown",
+            "label": "Number of VMs to create",
+            "defaultValue": "2",
+            "toolTip": "The number of virtual machines to provision for the cluster",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "2",
+                  "value": 2
+                },
+                {
+                  "label": "3",
+                  "value": 3
+                },
+                {
+                  "label": "4",
+                  "value": 4
+                },
+                {
+                  "label": "5",
+                  "value": 5
+                },
+                {
+                  "label": "6",
+                  "value": 6
+                },
+                {
+                  "label": "7",
+                  "value": 7
+                },
+                {
+                  "label": "8",
+                  "value": 8
+                },
+                {
+                  "label": "9",
+                  "value": 9
+                },
+                {
+                  "label": "10",
+                  "value": 10
+                },
+                {
+                  "label": "11",
+                  "value": 11
+                },
+                {
+                  "label": "12",
+                  "value": 12
+                },
+                {
+                  "label": "13",
+                  "value": 13
+                },
+                {
+                  "label": "14",
+                  "value": 14
+                },
+                {
+                  "label": "15",
+                  "value": 15
+                },
+                {
+                  "label": "16",
+                  "value": 16
+                },
+                {
+                  "label": "17",
+                  "value": 17
+                },
+                {
+                  "label": "18",
+                  "value": 18
+                },
+                {
+                  "label": "19",
+                  "value": 19
+                },
+                {
+                  "label": "20",
+                  "value": 20
+                },
+                {
+                  "label": "21",
+                  "value": 21
+                },
+                {
+                  "label": "22",
+                  "value": 22
+                },
+                {
+                  "label": "23",
+                  "value": 23
+                },
+                {
+                  "label": "24",
+                  "value": 24
+                },
+                {
+                  "label": "25",
+                  "value": 25
+                },
+                {
+                  "label": "26",
+                  "value": 26
+                },
+                {
+                  "label": "27",
+                  "value": 27
+                },
+                {
+                  "label": "28",
+                  "value": 28
+                },
+                {
+                  "label": "29",
+                  "value": 29
+                },
+                {
+                  "label": "30",
+                  "value": 30
+                },
+                {
+                  "label": "31",
+                  "value": 31
+                },
+                {
+                  "label": "32",
+                  "value": 32
+                }
+              ]
+            }
+          },
+          {
+            "name": "vmSize",
+            "type": "Microsoft.Compute.SizeSelector",
+            "label": "VM Size",
+            "toolTip": "Size of the virtual machine",
+            "recommendedSizes": [
+              "Standard_DS3_v2",
+              "Standard_DS4_v2",
+              "Standard_DS3",
+              "Standard_DS4",
+              "Standard_D3_v2",
+              "Standard_D4_v2"
+            ],
+            "constraints": {
+              "allowedSizes": [
+                "Standard_DS3_v2",
+                "Standard_DS4_v2",
+                "Standard_DS3",
+                "Standard_DS4",
+                "Standard_D3_v2",
+                "Standard_D4_v2"
+              ]
+            },
+            "osPlatform": "Linux",
+            "count": "[steps('clusterConfig').vmCount]"
+          },
+          {
+            "name": "virtualNetwork",
+            "type": "Microsoft.Network.VirtualNetworkCombo",
+            "label": {
+              "virtualNetwork": "Virtual network",
+              "subnets": "Subnets"
+            },
+            "toolTip": {
+              "virtualNetwork": "Cluster servers can be deployed only into a new virtual network",
+              "subnets": "For a new virtual network, the deployment will create three subnets attaching three network cards to each server, one per subnet."
+            },
+            "defaultValue": {
+              "name": "[concat(basics('clusterName'),'-vnet')]",
+              "addressPrefixSize": "/16"
+            },
+            "options": {
+              "hideExisting": true
+            },
+            "constraints": {
+              "minAddressPrefixSize": "/24"
+            },
+            "subnets": {
+              "subnet1": {
+                "label": "Subnet1",
+                "defaultValue": {
+                  "name": "subnet1",
+                  "addressPrefixSize": "/24"
+                },
+                "constraints": {
+                  "minAddressPrefixSize": "/26",
+                  "minAddressCount": "[add(steps('clusterConfig').vmCount,5)]",
+                  "requireContiguousAddresses": true
+                }
+              },
+              "subnet2": {
+                "label": "Subnet2",
+                "defaultValue": {
+                  "name": "subnet2",
+                  "addressPrefixSize": "/24"
+                },
+                "constraints": {
+                  "minAddressPrefixSize": "/26",
+                  "minAddressCount": "[add(steps('clusterConfig').vmCount,5)]",
+                  "requireContiguousAddresses": true
+                }
+              },
+              "subnet3": {
+                "label": "Subnet3",
+                "defaultValue": {
+                  "name": "subnet3",
+                  "addressPrefixSize": "/24"
+                },
+                "constraints": {
+                  "minAddressPrefixSize": "/26",
+                  "minAddressCount": "[add(steps('clusterConfig').vmCount,5)]",
+                  "requireContiguousAddresses": true
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "exampleConfig",
+        "label": "Example Config",
+        "subLabel": {
+          "preValidation": "Configure other settings",
+          "postValidation": "Done"
+        },
+        "bladeTitle": "Example Configuration",
+        "elements": [
+          {
+            "name": "publicIP",
+            "type": "Microsoft.Network.PublicIpAddressCombo",
+            "label": {
+              "publicIpAddress": "Public IP Resource",
+              "domainNameLabel": "Public IP Domain Name"
+            },
+            "toolTip": {
+              "publicIpAddress": "Internal name of the public IP address resource",
+              "domainNameLabel": "DNS prefix to use for the public IP address (e.g. [dnsPrefix].region.cloudapp.azure.com)"
+            },
+            "defaultValue": {
+              "publicIpAddressName": "[concat(basics('clusterName'),'-publicip')]",
+              "domainNameLabel": ""
+            },
+            "constraints": {
+              "required": {
+                "domainNameLabel": true
+              }
+            },
+            "options": {
+              "hideNone": true,
+              "hideDomainNameLabel": false,
+              "hideExisting": true
+            }
+          },
+          {
+            "name": "dataDiskSize",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Total storage per server (with 3 disks)",
+            "defaultValue": "3x128GB",
+            "toolTip": "Total storage available on each VM instance combined from 3 attached data disks",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "3x128GB",
+                  "value": 128
+                },
+                {
+                  "label": "3x512GB",
+                  "value": 512
+                },
+                {
+                  "label": "3x1023GB",
+                  "value": 1023
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "outputs": {
+      "location": "[location()]",
+      "clusterName": "[basics('clusterName')]",
+      "adminUsername": "[basics('adminUsername')]",
+      "adminPassword": "[basics('adminCredentials').password]",
+      "sshPublicKey": "[basics('adminCredentials').sshPublicKey]",
+      "authenticationType": "[basics('adminCredentials').authenticationType]",
+      "fullName": "[steps('userInfo').userInfoSection.fullName]",
+      "email": "[steps('userInfo').userInfoSection.email]",
+      "company": "[steps('userInfo').userInfoSection.company]",
+      "phone": "[steps('userInfo').userInfoSection.phone]",
+      "vmCount": "[steps('clusterConfig').vmCount]",
+      "vmSize": "[steps('clusterConfig').vmSize]",
+      "vnetResourceGroup": "[steps('clusterConfig').virtualNetwork.resourceGroup]",
+      "vnetName": "[steps('clusterConfig').virtualNetwork.name]",
+      "vnetNewOrExisting": "[steps('clusterConfig').virtualNetwork.newOrExisting]",
+      "vnetAddressPrefix": "[steps('clusterConfig').virtualNetwork.addressPrefix]",
+      "subnet1Name": "[steps('clusterConfig').virtualNetwork.subnets.subnet1.name]",
+      "subnet1AddressSpace": "[steps('clusterConfig').virtualNetwork.subnets.subnet1.addressPrefix]",
+      "subnet1StartAddress": "[steps('clusterConfig').virtualNetwork.subnets.subnet1.startAddress]",
+      "subnet2Name": "[steps('clusterConfig').virtualNetwork.subnets.subnet2.name]",
+      "subnet2AddressSpace": "[steps('clusterConfig').virtualNetwork.subnets.subnet2.addressPrefix]",
+      "subnet2StartAddress": "[steps('clusterConfig').virtualNetwork.subnets.subnet2.startAddress]",
+      "subnet3Name": "[steps('clusterConfig').virtualNetwork.subnets.subnet3.name]",
+      "subnet3AddressSpace": "[steps('clusterConfig').virtualNetwork.subnets.subnet3.addressPrefix]",
+      "subnet3StartAddress": "[steps('clusterConfig').virtualNetwork.subnets.subnet3.startAddress]",
+      "publicIPAddressNewOrExisting": "[steps('exampleConfig').publicIP.newOrExistingOrNone]",
+      "publicIPAddressResourceGroup": "[steps('exampleConfig').publicIP.resourceGroup]",
+      "publicIPAddressName": "[steps('exampleConfig').publicIP.name]",
+      "publicIPAddressDomainNameLabel": "[steps('exampleConfig').publicIP.domainNameLabel]",
+      "dataDiskSize": "[steps('exampleConfig').dataDiskSize]"
+    }
+  }
+}

@@ -10,13 +10,24 @@ azure group create --name avstartaddress1 --location westus
 azure group deployment create --resource-group avstartaddress1 --name mainTemplate --template-file mainTemplate.json
 ```
 
+# Summary
+
+* createUiDefinition.json included with this template shows how to configure the virtual network control to return 3 subnets of specific sizes.
+* You can preview the UI definition by visiting http://armviz.io, clicking the "Portal UI Editor" button, copying-and-pasting the createUiDefinition.json content there, and clicking the "Preview" button.
+* This example template attaches public IP only to the first VM created.
+* It by default uses Standard_D3_v2 VMs since it shows how to attach 3 network cards to each.
+* After the template runs successfully,  init.sh script will log some data into /var/log/messages
+
+> Jul 21 23:22:25 localhost logger: init.sh NOW=20160721 MYIP1=10.0.0.11 NODETYPE=nodetype NODECOUNT=2 LOCALIP1=10.0.0.11 LOCALIP2=10.0.1.21 LOCALIP3=10.0.2.31 SUBNET1STARTADDRESS=10.0.0.11 SUBNET2STARTADDRESS=10.0.1.21 SUBNET3STARTADDRESS=10.0.2.31
+ 
 # Description
+
 Get input parameter of a start address for each of the 3 subnets from the UI control into the template.
 Use static private IP addresses assigned following a convention like vm0, vm1, vm2, etc. 
 In this way, we can know exactly which IPs are assigned to a node based on its index, the start address, and the total number of nodes.
 
-* To make sure that we also get proper virtual network and subnet definitions as input parameters to the template, our createUiDefinition.json needs to include the VirtualNetworkCombo UI control azure group deployment create --resource-group avstartaddress1 --name mainTemplate --template-file mainTemplate.json
-    * If we only want to support "new virtual network" pattern, we can set the options.hideExisting to false
+* To make sure that we also get proper virtual network and subnet definitions as input parameters to the template, our createUiDefinition.json needs to include the VirtualNetworkCombo UI control https://github.com/Azure/azure-marketplace/wiki/Microsoft.Network.VirtualNetworkCombo
+    * If we only want to support "new virtual network" pattern, we can set the options.hideExisting to true
     * The output of this UI control would give us back the 3 subnets that we requested and the start address for each of the subnets
     * We can configure the minAddressPrefixSize for the subnets and also set requireContiguousAddresses to true to make sure that all available addresses are one right after the other
 * In the template, we setup 3 sets of parameters for the network
@@ -61,9 +72,3 @@ do
 done 
 ```
 
-* This example template attaches public IP only to the first VM created.
-* It by default uses Standard_D3_v2 VMs since it shows how to attach 3 network cards to each.
-* After the template runs successfully,  init.sh script will log some data into /var/log/messages
-
-> Jul 21 23:22:25 localhost logger: init.sh NOW=20160721 MYIP1=10.0.0.11 NODETYPE=nodetype NODECOUNT=2 LOCALIP1=10.0.0.11 LOCALIP2=10.0.1.21 LOCALIP3=10.0.2.31 SUBNET1STARTADDRESS=10.0.0.11 SUBNET2STARTADDRESS=10.0.1.21 SUBNET3STARTADDRESS=10.0.2.31
- 
