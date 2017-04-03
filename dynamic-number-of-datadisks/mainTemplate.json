@@ -1,0 +1,101 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "artifactsBaseUrl": {
+      "type": "string",
+      "defaultValue": "https://templocistorage.blob.core.windows.net/datadisks",
+      "metadata": {
+        "description": "Base URL for artifacts such as nested templates and scripts",
+        "artifactsBaseUrl": ""
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "eastus2",
+      "metadata": {
+        "description": "Location for the deployment"
+      }
+    },
+    "diskCount": {
+      "type": "int",
+      "defaultValue": 20,
+      "minValue": 0,
+      "maxValue": 30,
+      "metadata": {
+        "description": "Number of data disks (0-30)"
+      }
+    }
+  },
+  "variables": {
+    "apiVersions": {
+      "resources": {
+        "deployments": "2016-09-01"
+      },
+      "storage": {
+        "storageAccounts": "2016-12-01"
+      },
+      "network": {
+        "virtualNetworks": "2017-04-01",
+        "networkInterfaces": "2017-04-01",
+        "loadBalancers": "2017-04-01",
+        "publicIPAddresses": "2017-04-01",
+        "networkSecurityGroups": "2017-04-01"
+      },
+      "compute": {
+        "availabilitySets": "2016-08-30",
+        "virtualMachines": "2016-08-30",
+        "virtualMachineExtensions": "2016-08-30"
+      }
+    },
+    "baseUrl": "[concat(parameters('artifactsBaseUrl'),'/')]",
+    "templateUrlDataDisks": "[concat(variables('baseUrl'),'dataDisks.json')]"
+  },
+  "resources": [
+    {
+      "apiVersion": "[variables('apiVersions').resources.deployments]",
+      "type": "Microsoft.Resources/deployments",
+      "name": "[concat('dataDisks',copyIndex())]",
+      "copy":{
+        "name": "dataDisksCopy",
+        "count": 64
+      },
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('templateUrlDataDisks')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "apiVersions": {
+            "value": "[variables('apiVersions')]"
+          },
+          "vmName": {
+            "value": "myvm"
+          },
+          "storageAccountName": {
+            "value": "mystorageaccount"
+          },
+          "containerName": {
+            "value": "mycontainer"
+          },
+          "diskSizeGB": {
+            "value": 1023
+          },
+          "diskCaching": {
+            "value": "ReadOnly"
+          },
+          "diskCount": {
+            "value": "[parameters('diskCount')]"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "dataDiskArray": {
+      "type": "array",
+      "value": "[reference('dataDisks0').outputs.dataDiskArray.value]"
+    }
+  }
+}
