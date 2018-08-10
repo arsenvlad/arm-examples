@@ -1,6 +1,8 @@
+Update: This is an outdated approach that was needed only prior to ARM templates supporting copy for properties. You no longer need to use this approach. See this doc for the property iteration approach that is built into ARM template language https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-create-multiple#property-iteration
+
 # Dynamic Number of Data Disks
 
-Using nested deployment template to generate a unique array of dataDisks to use for the Virtual Machine
+Using nested deployment template to generate a unique array of dataDisks to use for the Virtual Machine.
 
 ### Set environment variables
 

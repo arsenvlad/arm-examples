@@ -1,0 +1,61 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]"
+        },
+        "appName": {
+            "type": "string"
+        },
+        "appType": {
+            "type": "string",
+            "defaultValue": "other",
+            "allowedValues": [
+                "web",
+                "java",
+                "other"
+            ]
+        },
+        "appLocation": {
+            "type": "string",
+            "defaultValue": "East US",
+            "allowedValues": [
+                "East US",
+                "North Europe",
+                "South Central US",
+                "Southeast Asia",
+                "West Europe",
+                "West US 2"
+            ]
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "apiVersion": "2018-05-01-preview",
+            "type": "Microsoft.Insights/components",
+            "name": "[parameters('appName')]",
+            "kind": "[parameters('appType')]",
+            "location": "[parameters('appLocation')]",
+            "properties": {
+                "applicationId": "[parameters('appName')]"
+            }
+        }
+    ],
+    "outputs": {
+        "appInsightsResourceId": {
+            "type": "string",
+            "value": "[resourceId(resourceGroup().name, 'Microsoft.Insights/components', parameters('appName'))]"
+        },
+        "appInsightsObject": {
+            "type": "object",
+            "value": "[reference(resourceId(resourceGroup().name, 'Microsoft.Insights/components', parameters('appName')), '2018-05-01-preview')]"
+        },
+        "appInsightsInstrumentationKey": {
+            "type": "string",
+            "value": "[reference(resourceId(resourceGroup().name, 'Microsoft.Insights/components', parameters('appName')), '2018-05-01-preview').InstrumentationKey]"
+        }
+    }
+}

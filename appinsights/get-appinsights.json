@@ -1,0 +1,53 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appInsightsResourceGroup": {
+            "type": "string"
+        },
+        "appName": {
+            "type": "string"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "apiVersion": "2018-02-01",
+            "type": "Microsoft.Resources/deployments",
+            "name": "nested-template",
+            "properties": {
+                "mode": "Incremental",
+                "parameters": {
+                    "param1": {
+                        "value": "[reference(resourceId(parameters('appInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appName')), '2018-05-01-preview').InstrumentationKey]"
+                    }
+                },
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {
+                        "param1": {
+                            "type": "string"
+                        }
+                    },
+                    "resources": [],
+                    "outputs": {}
+                }
+            }
+        }
+    ],
+    "outputs": {
+        "appInsightsResourceId": {
+            "type": "string",
+            "value": "[resourceId(parameters('appInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appName'))]"
+        },
+        "appInsightsObject": {
+            "type": "object",
+            "value": "[reference(resourceId(parameters('appInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appName')), '2018-05-01-preview')]"
+        },
+        "appInsightsInstrumentationKey": {
+            "type": "string",
+            "value": "[reference(resourceId(parameters('appInsightsResourceGroup'), 'Microsoft.Insights/components', parameters('appName')), '2018-05-01-preview').InstrumentationKey]"
+        }
+    }
+}
