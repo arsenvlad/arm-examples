@@ -51,3 +51,8 @@ az group deployment create --resource-group avai1 --template-file get-appinsight
 az group deployment show --query properties.outputs --resource-group avai1 --name get-appinsights -o json
 ```
 
+Create Application Insights resource in a separate resource group and from the same template get the App Insights information. For this approach, we pre-create the separate resource group for the App Insights resource (e.g. RG=avai1-app1). The template uses a nested template to create the App Insights resource in that separate existing resource group and afterwards uses the get-appinsights.json as a nested template to get back the instrumentation key. The reason we cannot get the instrumentation key from the same temlate is because it appears ARM template cannot use reference() to get information on resource that was created in separate RG during the same invocation (i.e. ARM template references for resources in other RGs are probably evaluated before the template starts execution both for nested template parameters and outputs)
+```
+az group create --name avai1-app1 --location eastus
+az group deployment create --resource-group avai1 --template-file create-in-different-rg-and-get-appinsights.json
+```

@@ -1,0 +1,109 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appInsightsResourceGroup": {
+            "type": "string"
+        },
+        "appName": {
+            "type": "string"
+        },
+        "appType": {
+            "type": "string",
+            "defaultValue": "other",
+            "allowedValues": [
+                "web",
+                "java",
+                "other"
+            ]
+        },
+        "appLocation": {
+            "type": "string",
+            "defaultValue": "East US",
+            "allowedValues": [
+                "East US",
+                "North Europe",
+                "South Central US",
+                "Southeast Asia",
+                "West Europe",
+                "West US 2"
+            ]
+        },
+        "getAppInsightsTemplateUrl": {
+            "type": "string",
+            "defaultValue": "https://raw.githubusercontent.com/arsenvlad/arm-examples/master/appinsights/get-appinsights.json"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "comments": "Resource group 'appInsightsResourceGroup' must already exist.",
+            "apiVersion": "2018-02-01",
+            "type": "Microsoft.Resources/deployments",
+            "name": "create-in-different-rg-appinsights",
+            "resourceGroup": "[parameters('appInsightsResourceGroup')]",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": [
+                        {
+                            "apiVersion": "2018-05-01-preview",
+                            "type": "Microsoft.Insights/components",
+                            "name": "[parameters('appName')]",
+                            "kind": "[parameters('appType')]",
+                            "location": "[parameters('appLocation')]",
+                            "properties": {
+                                "applicationId": "[parameters('appName')]"
+                            }
+                        }
+                    ],
+                    "outputs": {}
+                }
+            }
+        },
+        {
+            "comments": "Since Application Insights is created in a separate resource group, it cannot be accessed from this template execution directly and needs be accessed in context of the nested-template after the App Insights resource is already created.",
+            "apiVersion": "2018-02-01",
+            "type": "Microsoft.Resources/deployments",
+            "name": "get-appinsights",
+            "dependsOn": [
+                "create-in-different-rg-appinsights"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink":{
+                    "uri": "[parameters('getAppInsightsTemplateUrl')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "appInsightsResourceGroup": {
+                        "value": "[parameters('appInsightsResourceGroup')]"
+                    },
+                    "appName": {
+                        "value": "[parameters('appName')]"
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {
+        "getAppInsightsObject": {
+            "type": "object",
+            "value": "[reference('get-appinsights')]"
+        },
+        "appInsightsResourceId": {
+            "type": "string",
+            "value": "[reference('get-appinsights').outputs.appInsightsResourceId.value]"
+        },
+        "appInsightsObject": {
+            "type": "object",
+            "value": "[reference('get-appinsights').outputs.appInsightsObject.value]"
+        },
+        "appInsightsInstrumentationKey": {
+            "type": "string",
+            "value": "[reference('get-appinsights').outputs.appInsightsInstrumentationKey.value]"
+        }
+    }
+}
