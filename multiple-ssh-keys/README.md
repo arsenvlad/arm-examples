@@ -1,7 +1,7 @@
 # Linux VM with multiple SSH public keys
 This simple example shows how to deploy an Azure VM with multiple SSH public keys.
 
-NOTE: This seems to work properly with CentOS 7.4, but only stores the last key for CentOS 6.8 images.
+NOTE: This approach works properly with CentOS 7.4 images, but only stores the last key for CentOS 6.8 images. The issue in CentOS 6.8 image is caused by an issue in WALinuxAgent where [Redhat6xOSUtil.openssl_to_openssh()](https://github.com/Azure/WALinuxAgent/blob/0c5add75646c2f975c7f8dccc1c15e43618e0e4b/azurelinuxagent/common/osutil/redhat.py#L64) is using fileutil.write_file() instead of fileutil.append_file(). There is a pull request that fixes the issue https://github.com/Azure/WALinuxAgent/pull/1349/files
 
 Create resource group for the VM(s)
 ```
