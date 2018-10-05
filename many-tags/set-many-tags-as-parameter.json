@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "tagsObject": {
+      "type": "object",
+      "metadata": {
+        "description": "Many tags passed in as a JSON object"
+      }
+    }
+  },
+  "variables": {
+    "location": "[resourceGroup().location]",
+  },
+  "resources": [
+    {
+      "apiVersion": "2017-06-01",
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[uniqueString(resourceGroup().id)]",
+      "location": "[variables('location')]",
+      "kind": "Storage",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "tags": "[parameters('tagsObject')]",
+      "properties": {}
+    }
+  ],
+  "outputs": {}
+}
