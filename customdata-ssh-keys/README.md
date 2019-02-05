@@ -1,5 +1,7 @@
 # Using VM CustomData to pass in multiple SSH public keys
 
+This example was tried with CentOS 6.x based image running Linux Azure Agent 2.2.11
+
 Prior to creating the VM image, update the /etc/waagent.conf file to set the following parameters to "y"
 ```
 sed -i 's/Provisioning.DecodeCustomData=n/Provisioning.DecodeCustomData=y/g' /etc/waagent.conf
@@ -8,7 +10,7 @@ sed -i 's/Provisioning.ExecuteCustomData=n/Provisioning.ExecuteCustomData=y/g' /
 
 Set sshPublicKey parameter to an SSH public key which is required for VM provisioning. However, if you do not want to use this static public key to be able to access the VMs in the future, you can delete its private key.
 
-Set customData (max length 64KB) ARM template parameter to string value with a Bash script like the following. You will need to replace the USERNAME string with the adminUsername value that you are using when provisioning the VM. 
+Set customData (max length 64KB) ARM template parameter to string value with a Bash script like the following. You will need to replace the USERNAME string with the adminUsername value that you are using when provisioning the VM. Also, make sure that the script contains LF (newlines) and not Windows carriage returns (CRLF).
 ```
 #!/bin/bash
 
@@ -18,7 +20,7 @@ do
 done
 ```
 
-CustomData is executed by Linux Agent before extensions (CustomData is not executed on Ubuntu/CoreOS or when using cloud-init)
+CustomData is executed by Linux Agent (or by cloud-init) before extensions
 
 Troubleshooting
 * /var/log/waagent.log
@@ -31,7 +33,8 @@ Create resource group
 az group create -n avcd1 -l eastus2
 ```
 
-Deploy template with customdata-script-example.sh containing sample script to run with sample SSH public keys (do NOT use these exact keys, they are just for testing)
+Deploy template with customdata-script-example.sh containing sample script to run with sample SSH public keys (do NOT use these exact keys, they are just for testing).
+Also, make sure that the script contains LF (newlines) and not Windows carriage returns (CRLF).
 ```
 az group deployment create -g avcd1 --template-file create-vm-with-customdata.json --parameters customData=@customdata-script-example.sh
 ```
