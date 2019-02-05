@@ -39,10 +39,13 @@ az group deployment create -g avcd1 --template-file create-vm-with-customdata.js
 After VM provisions, you can review the following items to double-check that keys were set as expected.
 
 Linux Azure Agent log showing decoding and executing CustomData
+
 ![waagent log screenshot](images/waagent-log.png)
 
 CustomData saved by Linux Azure Agent based on what was passed as base64 encoded value to osProfile.customData property of the VM in the ARM template
+
 ![waagent log screenshot](images/waagent-customdata.png)
 
 Contents of the authorized_keys file
+
 ![authorizedkeys screenshot](images/authorized_keys.png)
