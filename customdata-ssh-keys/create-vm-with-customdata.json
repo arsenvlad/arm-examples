@@ -1,0 +1,218 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "managedImageID": {
+      "type": "string",
+      "metadata": {
+        "description": "Managed Image Resource ID from which to create the VM"
+      }
+    },
+    "vmName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name for the virtual machine"
+      }
+    },
+    "vmCount": {
+      "type": "int",
+      "metadata": {
+        "description": "Number of VMs to create"
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "defaultValue": "azureuser",
+      "metadata": {
+        "description": "User name for the Virtual Machine."
+      }
+    },
+    "sshPublicKey": {
+      "type": "string",
+      "metadata": {
+        "description": "One SSH public key that is required to provision the VM. To make this key unusable, you can delete the corresponding private key."
+      }
+    },
+    "customData": {
+      "type": "string",
+      "maxLength": 65536,
+      "metadata": {
+        "description": "Custom Data (maximum 64KB) to pass to the VM containing executable script to configure SSH keys"
+      }
+    }
+  },
+  "variables": {
+    "location": "[resourceGroup().location]",
+    "nicName": "[concat(parameters('vmName'),'-nic')]",
+    "addressPrefix": "10.0.0.0/16",
+    "subnetName": "subnet-data",
+    "subnetPrefix": "10.0.1.0/24",
+    "storageAccountType": "Standard_LRS",
+    "publicIPAddressName": "[concat(parameters('vmName'),'-publicip')]",
+    "publicIPAddressType": "Dynamic",
+    "vmSize": "Standard_D2_v2",
+    "virtualNetworkName": "[concat(parameters('vmName'),'-vnet')]",
+    "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('virtualNetworkName'))]",
+    "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",
+    "diagnosticsStorageAccount": "[concat('d',uniqueString(resourceGroup().id,'d'))]"
+  },
+  "resources": [
+    {
+      "apiVersion": "2017-06-01",
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[variables('diagnosticsStorageAccount')]",
+      "location": "[variables('location')]",
+      "kind": "Storage",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "properties": {}
+    },
+    {
+      "apiVersion": "2018-10-01",
+      "type": "Microsoft.Compute/availabilitySets",
+      "name": "[concat(parameters('vmName'),'-as')]",
+      "location": "[variables('location')]",
+      "properties": {
+        "platformFaultDomainCount": 2,
+        "platformUpdateDomainCount": 20
+      },
+      "sku": {
+        "name": "Aligned"
+      }
+    },
+    {
+      "apiVersion": "2018-08-01",
+      "type": "Microsoft.Network/virtualNetworks",
+      "name": "[variables('virtualNetworkName')]",
+      "location": "[variables('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('addressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('subnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('subnetPrefix')]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2018-08-01",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "[concat(variables('publicIPAddressName'),copyIndex())]",
+      "location": "[variables('location')]",
+      "copy": {
+        "name": "publicIPCopy",
+        "count": "[parameters('vmCount')]"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "[variables('publicIPAddressType')]",
+        "dnsSettings": {
+          "domainNameLabel": "[concat(parameters('vmName'),copyIndex())]"
+        }
+      }
+    },
+    {
+      "apiVersion": "2018-08-01",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[concat(variables('nicName'),copyIndex())]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/publicIPAddresses/', concat(variables('publicIPAddressName'),copyIndex()))]",
+        "[concat('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]"
+      ],
+      "copy": {
+        "name": "nicCopy",
+        "count": "[parameters('vmCount')]"
+      },
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses',concat(variables('publicIPAddressName'),copyIndex()))]"
+              },
+              "subnet": {
+                "id": "[variables('subnetRef')]"
+              }
+            }
+          }
+        ],
+        "enableAcceleratedNetworking": true
+      }
+    },
+    {
+      "apiVersion": "2018-10-01",
+      "type": "Microsoft.Compute/virtualMachines",
+      "name": "[concat(parameters('vmName'),copyIndex())]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', concat(variables('nicName'),copyIndex()))]",
+        "[concat('Microsoft.Storage/storageAccounts/', variables('diagnosticsStorageAccount'))]"
+      ],
+      "copy": {
+        "name": "vmCopy",
+        "count": "[parameters('vmCount')]"
+      },
+      "properties": {
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets', concat(parameters('vmName'),'-as'))]"
+        },
+        "hardwareProfile": {
+          "vmSize": "[variables('vmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[concat(parameters('vmName'),copyIndex())]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "customData": "[base64(parameters('customData'))]",
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": true,
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('adminUserName'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('sshPublicKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "storageProfile": {
+          "imageReference": {
+            "id": "[parameters('managedImageID')]"
+          },
+          "osDisk": {
+            "name": "[concat(parameters('vmName'),copyIndex(),'-','osdisk')]",
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "[variables('storageAccountType')]"
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('nicName'),copyIndex()))]"
+            }
+          ]
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": true,
+            "storageUri": "[concat('http://', variables('diagnosticsStorageAccount'), '.blob.core.windows.net')]"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}
