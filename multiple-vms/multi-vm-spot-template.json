@@ -1,0 +1,152 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "numberOfVms": {
+      "type": "int",
+      "defaultValue": 1,
+      "minValue": 1,
+      "maxValue": 256,
+      "metadata": {
+        "description": "Number of VMs to deploy"
+      }
+    },
+    "deploymentName": {
+      "type": "string",
+      "defaultValue": "[deployment().name]"
+    },
+    "subnetResourceId": {
+      "type": "string"
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_D4s_v3"
+    },
+    "adminUserName": {
+      "type": "string",
+      "defaultValue": "azureuser"
+    },
+    "sshPublicKey": {
+      "type": "string"
+    },
+    "additionalTags": {
+      "defaultValue": "",
+      "type": "object"
+    },
+    "customData": {
+      "type": "string",
+      "maxLength": 65536,
+      "defaultValue": "",
+      "metadata": {
+        "description": "Custom Data (maximum 64KB) to pass to the VM containing executable script to configure SSH keys"
+      }
+    },
+    "imageReference": {
+      "type": "object",
+      "defaultValue": {
+        "publisher": "OpenLogic",
+        "offer": "CentOS",
+        "sku": "7.7",
+        "version": "latest"
+      },
+      "metadata": {
+        "description": "Image reference to use for the VM"
+      }
+    }
+  },
+  "variables": {
+    "location": "[resourceGroup().location]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2018-01-01",
+      "name": "[concat(parameters('deploymentName'), '-', copyIndex())]",
+      "location": "[variables('location')]",
+      "copy": {
+        "name": "nicLoop",
+        "count": "[parameters('numberOfVms')]"
+      },
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "primary",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[parameters('subnetResourceId')]"
+              }
+            }
+          }
+        ],
+        "enableAcceleratedNetworking": true
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-07-01",
+      "name": "[concat(parameters('deploymentName'), '-', copyIndex())]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', parameters('deploymentName'), '-', copyIndex())]"
+      ],
+      "tags": "[union(json(concat('{\"tag1\": \"', parameters('deploymentName'), '-', copyIndex(), '\"}')), parameters('additionalTags'))]",
+      "copy": {
+        "name": "vmLoop",
+        "count": "[parameters('numberOfVms')]"
+      },
+      "properties": {
+        "priority": "Spot",
+        "evictionPolicy": "Deallocate",
+        "billingProfile": {
+          "maxPrice": -1
+        },
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "storageProfile": {
+          "imageReference": "[parameters('imageReference')]",
+          "osDisk": {
+            "osType": "Linux",
+            "name": "[concat(parameters('deploymentName'), '-', copyIndex())]",
+            "createOption": "FromImage",
+            "caching": "ReadWrite",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+          "dataDisks": [
+          ]
+        },
+        "osProfile": {
+          "computerName": "[concat(replace(parameters('deploymentName'),'-','-'), '-', copyIndex())]",
+          "adminUsername": "[parameters('adminUserName')]",
+          "customData": "[base64(parameters('customData'))]",
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": true,
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('adminUserName'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('sshPublicKey')]"
+                }
+              ]
+            }
+          },
+          "secrets": [
+          ]
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('deploymentName'), '-', copyIndex()))]",
+              "properties": {
+                "primary": true
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
