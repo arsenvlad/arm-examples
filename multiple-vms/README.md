@@ -35,6 +35,8 @@ Set SSH Public Key (obviously, use your own public key here instead of the test 
 SSH_PUBLIC_KEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC9wmUPRLdMUJ8/HJz+gpp1YbE09W7HHsAmh0SoCUUrjCsdAoK7x9IQcl+5WP3H1JmtvejZRbPemxtbWgtN3aMvr4WxB0ukfdc4Dcsj73uyhBKn9pUAa/uQV0pwX1FsTNsLF8U99kjfEmCwW6bHOS5PB2E9Kh0pw8i1A36kcgudtoWd6XmwLwlAeVtK+ULkHUHNjOxqLXzbISKeARnhBzqnlA/g+usYEvTLL/VzKFd8FZEF+UBxo5FNVuFIyyXSEr2lRMiaa0W++E1EWhwGNn5weM36vFaZS0So2I8tV/aEb7hfpVe9hSrGjkijAwh+E+nNvjyg0Z1Y407nKvCD9yLr AV"
 ```
 
+Deploy multiple VMs by pointing imageReference to OpenLogic:CentOS:7.7:latest image from platform/marketplace
+
 ```bash
 az deployment group create --resource-group avmultivm1 --name deployment001 --template-file multi-vm-spot-template.json --parameters numberOfVms=2 vmSize=Standard_D4s_v3 subnetResourceId="$SUBNET_RESOURCE_ID" sshPublicKey="$SSH_PUBLIC_KEY" customData="# my custom data #" imageReference="{'publisher':'OpenLogic','offer':'CentOS','sku':'7.7','version':'latest'}" additionalTags="{'tag2':'value2','tag3':'value3'}"
 ```
@@ -74,7 +76,7 @@ IMAGE_RESOURCE_ID=$(az sig image-version show --resource-group avsig100 --galler
 echo IMAGE_RESOURCE_ID=$IMAGE_RESOURCE_ID
 ```
 
-Deploy multiple VMs by pointing imageReference to the resource id of the image version
+Deploy multiple VMs by pointing imageReference to the resource id of the shared image gallery image version
 
 ```bash
 az deployment group create --resource-group avmultivm1 --name deployment002 --template-file multi-vm-spot-template.json --parameters numberOfVms=3 vmSize=Standard_D4s_v3 subnetResourceId="$SUBNET_RESOURCE_ID" sshPublicKey="$SSH_PUBLIC_KEY" customData="# my custom data #" imageReference="{\"id\":\"$IMAGE_RESOURCE_ID\"}" additionalTags="{'tag2':'value2','tag3':'value3'}"
