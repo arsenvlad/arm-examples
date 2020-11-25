@@ -1,6 +1,6 @@
 # Azure VMSS with cloud-init and Custom Script Extension
 
-Example of a simple template that deploys VMSS using Canonical Ubunut 16.04-LTS image, uses cloud-init for provisioning, and waagent for Microsoft.Azure.Extensions CustomScript extension.
+Example of a simple template that deploys VMSS using Canonical Ubuntu 16.04-LTS image, uses cloud-init for provisioning, and waagent for Microsoft.Azure.Extensions CustomScript extension.
 
 > WARNING: For simplicity, this template creates VMSS with Public IP and SSH access that is open to the Internet. Use only for testing and delete VMSS after deployment.
 
