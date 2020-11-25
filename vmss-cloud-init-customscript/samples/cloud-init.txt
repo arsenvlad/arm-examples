@@ -1,0 +1,4 @@
+#cloud-config
+
+runcmd:
+  - echo "Hello from cloud-init!" > /tmp/hello_from_cloud_init.txt
